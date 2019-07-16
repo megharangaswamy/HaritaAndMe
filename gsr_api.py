@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# Requires PyAudio and PySpeech.
+
 import os
 import speech_recognition as sr
 import asr_evaluation
@@ -8,7 +7,7 @@ import csv
 import pandas as pd
 import shutil
 
-# Record Audio
+# Create folder to save all results
 r = sr.Recognizer()
 if os.path.exists("C:/Users/Sri/Results"):
     shutil.rmtree("C:/Users/Sri/Results")
@@ -17,6 +16,7 @@ else:
     os.mkdir("C:/Users/Sri/Results")
 file1 = open("C:/Users/Sri/Results/prediction.txt","a")
 
+#take audio input from test data folders
 for folder in os.listdir("C:/Users/Sri/test_data"):
     
     for file in os.listdir("C:/Users/Sri/test_data/"+folder):
@@ -31,13 +31,16 @@ for folder in os.listdir("C:/Users/Sri/test_data"):
                 ans=r.recognize_google(audio, language='de-DE')
                 base=os.path.basename("C:/Users/Sri/test_data/"+ folder +"/"+file)
                 name=os.path.splitext(base)[0]
-                file1.write(name+" "+ans+"\n") 
+                file1.write(name+" "+ans+"\n") #add the predicted output to text folder with file name as id
+                
                     
             except sr.UnknownValueError:
                 print("Google Speech Recognition could not understand audio")
             except sr.RequestError as e:
                 print("Could not request results from Google Speech Recognition service; {0}".format(e))
 file1.close()
+
+#merge all the transcripts to a single txt file
 file2 = open("C:/Users/Sri/Results/transcript.txt","w")
 for folder in os.listdir("C:/Users/Sri/test_data"):
     for file in os.listdir("C:/Users/Sri/test_data/"+folder):
@@ -48,11 +51,15 @@ for folder in os.listdir("C:/Users/Sri/test_data"):
                 #file2.write(line.split(" ", 1)[1])
                 file2.write(line)          
 file2.close()
+
+# sort the transcript lines based on id i.e., audio file name
 with open("C:/Users/Sri/Results/prediction.txt", "r+") as f:
     lines = f.readlines()
     lines.sort()        
     f.seek(0)
     f.writelines(lines)
+    
+ #sort the predicted lines based on id i.e., audio file name
 with open("C:/Users/Sri/Results/transcript.txt", "r+") as f:
     lines = f.readlines()
     lines.sort()        
@@ -60,30 +67,31 @@ with open("C:/Users/Sri/Results/transcript.txt", "r+") as f:
     f.writelines(lines)
 
 #Evaluation
+#converts all the data to lower case, considers first word as id. more details can be found in "wer --help"
 subprocess.call("wer -r -a --head-ids C:/Users/Sri/Results/transcript.txt C:/Users/Sri/Results/prediction.txt >> C:/Users/Sri/Results/output.txt ",shell=True)
 
-# opens original file
+
 file3 = open("C:/Users/Sri/Results/output.txt" , "r")
-# opens new file
+
 file4 = open("C:/Users/Sri/Results/summary.txt" , "a")
-#for each line in old file
+#for each line in output file
 lines=file3.readlines()
 for line in lines[-4::]:
-#write that line to the new file
+#write the last 4 lines to summary.txt
     file4.write(line)
 #close file 1
 file3.close()
 #close file2
 file4.close()
 f = open("C:/Users/Sri/Results/output.txt", "r")
-
+# split the evaluation info about each sentence of the prediction into separate columns  
 lines=f.readlines()
 col1=lines[0:-4:5]
 col2=lines[1:-4:5]
 col3=lines[2:-4:5]
 col4=lines[3:-4:5]
 col5=lines[4:-4:5]
-
+#convert the output details into csv table
 df= pd.DataFrame({'sentence_no':col3,'accuracy':col4, 'error_rate':col5,  'predication':col2, 'original':col1})
 export_csv = df.to_csv (r'C:/Users/Sri/Results/output.csv', index = None, header=True)
 
