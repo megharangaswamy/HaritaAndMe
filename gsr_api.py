@@ -93,7 +93,16 @@ col4=lines[3:-4:5]
 col5=lines[4:-4:5]
 #convert the output details into csv table
 df= pd.DataFrame({'sentence_no':col3,'accuracy':col4, 'error_rate':col5,  'predication':col2, 'original':col1})
+df['accuracy'] = df.accuracy.str.extract(r'=(.+?)%', expand=True)
+df['error_rate'] = df.error_rate.str.extract(r'=(.+?)%', expand=True)
+df.accuracy = df.accuracy.astype(float)
 export_csv = df.to_csv (r'C:/Users/Sri/Results/output.csv', index = None, header=True)
+
+#calculate the average of individual sentence accuracy and add to summary
+avg=df.loc[:,"accuracy"].mean()
+file2 = open("summary_neujahr.txt" , "a")
+file2.write("Sentence Accuracy mean ="+ str(round(avg,3))+"%")
+file2.close()
 
 
     
